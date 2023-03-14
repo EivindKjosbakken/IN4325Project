@@ -1,8 +1,10 @@
 from flask import Flask, request
 import requests
+from flask_cors import CORS, cross_origin
 
 
 app = Flask(__name__)
+CORS(app)
 
 
 APP_URL = "/"
@@ -25,5 +27,5 @@ def testGetApi():
     isTest = True
 
     if isTest:
-        return "worked with get", 200
+        return {"Test": "worked with get"}, 200
     return "Test api method failed", 400
