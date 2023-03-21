@@ -12,10 +12,13 @@ CORS(app)
 
 APP_URL = "/"
 
-print("opening...")
+print("opening tf idf matrix and corpus")
 with open('IR/tfIdfMatrix.json') as json_file:
         tfIdfDict = json.load(json_file)
 tfIdfMatrix = np.array(tfIdfDict["array"])
+
+with open('IR/corpus.json') as json_file:
+    corpus = json.load(json_file)
 print("opened")
 
 
@@ -25,7 +28,7 @@ def retrieve():
     data = request.json  # if you want to retrieve data
     # print(data["query"])
     try:
-        indices = executeQuery("testing Python AI", tfIdfMatrix)
+        indices = executeQuery("testing Python AI", tfIdfMatrix, corpus)
         return {"indices" : (indices[:3])}, 200
     except:
         print("cant execute query")

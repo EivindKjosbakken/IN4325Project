@@ -15,7 +15,7 @@ import time
 
 # inference
 
-def executeQuery(query: str, tfIdfMatrix = None):
+def executeQuery(query: str, tfIdfMatrix = None, corpus = None):
     query = query.lower()
 
     with open('IR/idfDict.json') as json_file:
@@ -65,8 +65,7 @@ def executeQuery(query: str, tfIdfMatrix = None):
     res = res[res[:, 1].argsort()[::-1]]
 
     # if we want to return the actualy abstracts, then return this, else is returns the indices
-    with open('IR/corpus.json') as json_file:
-        corpus = json.load(json_file)
+
 
     # """
     orderedCorpusAccordingToQuery = []
