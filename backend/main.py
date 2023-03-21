@@ -2,7 +2,7 @@ from flask import Flask, request
 import requests
 from flask_cors import CORS, cross_origin
 
-from IN4325Project.IR.tfIdf import executeQuery
+from IR.tfIdf import executeQuery
 
 
 app = Flask(__name__)
@@ -15,8 +15,16 @@ APP_URL = "/"
 @app.route(f"{APP_URL}/retrieve", methods=["POST"])
 def retrieve():
     data = request.json  # if you want to retrieve data
+    # print(data["query"])
+    try:
+        indices = executeQuery("testing Python AI")
+        return {"indices" : (indices[:3])}, 200
+    except:
+        print("cant execute query")
+        return "error", 400
+
+
     isTest = True
-    print(data["query"])
 
     if isTest:
         return "Called test endpoint ", 200
