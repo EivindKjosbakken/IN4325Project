@@ -2,6 +2,8 @@ from flask import Flask, request
 import requests
 from flask_cors import CORS, cross_origin
 
+from IN4325Project.IR.tfIdf import executeQuery
+
 
 app = Flask(__name__)
 CORS(app)
@@ -14,6 +16,7 @@ APP_URL = "/"
 def retrieve():
     data = request.json  # if you want to retrieve data
     isTest = True
+    print(data["query"])
 
     if isTest:
         return "Called test endpoint ", 200
