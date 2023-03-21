@@ -1,0 +1,7 @@
+Ideas:
+
+-neural ranker (take inspiration from the second topic)
+-different pre-processing techniques on the abstract texts
+-basic tf-idf
+-BM25
+-filtration (on research group, faculty etc)
