@@ -10,8 +10,8 @@ CORS(app)
 APP_URL = "/"
 
 
-@app.route(f"{APP_URL}/testPost", methods=["POST"])
-def testPostApi():
+@app.route(f"{APP_URL}/retrieve", methods=["POST"])
+def retrieve():
     data = request.json  # if you want to retrieve data
     isTest = True
 

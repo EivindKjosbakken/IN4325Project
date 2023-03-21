@@ -11,28 +11,42 @@
   <div class="search-query">
     <p>You are searching for: {{ query }}</p>
   </div>
+
+  <div v-for="item in data">
+    <h1 @click='window.location.href = item.link'>{{ item.title }}</h1>
+    <p>{{ item.text }}</p>
+  </div>
 </template>
 
 <script>
   export default {
     data() {
       return {
-        query: ''
+        query: '',
+        data: undefined,
       }
     },
     methods: {
       async fetch(query) {
-        console.log(query);
-        const response = await fetch("http://localhost:5000/testGet");
-        const data = await response.json();
-        console.log(data)
-        // try {
-        //   fetch("http://localhost:5000/testGet")
-        //   .then(response => response.json())
-        //   .then(data => (console.log(data)));
-        // } catch (e) {
-        //   console.log(e)
-        // }
+        const options = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: query })
+        };
+
+        fetch('http://localhost:5000/retrieve', options)
+          .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+              const error = (data && data.message) || response.status;
+              return Promise.reject(error);
+            }
+            this.data = data;
+          })
+          .catch(error => {
+            this.errorMessage = error;
+            console.error('There was an error!', error);
+          });
       }
     }
   }
