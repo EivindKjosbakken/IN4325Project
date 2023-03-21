@@ -28,7 +28,7 @@ def retrieve():
     data = request.json  # if you want to retrieve data
     # print(data["query"])
     try:
-        indices = executeQuery("testing Python AI", tfIdfMatrix, corpus)
+        indices = executeQuery(data["query"], tfIdfMatrix, corpus)
         return {"indices" : (indices[:3])}, 200
     except:
         print("cant execute query")
