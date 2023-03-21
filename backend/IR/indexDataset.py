@@ -19,6 +19,7 @@ def indexDataset(numberOfDocumentsToRank = 1000):
 
 	dfRepo = pd.concat([dfRepo1, dfRepo2, dfRepo3, dfRepo4, dfRepo5, dfRepo6])
 	dfWithAbstract = dfRepo.dropna(subset=["abstract"]) #elements without abstract
+	dfWithAbstract = dfWithAbstract.replace(np.nan, '', regex=True)
 
 	corpusDict = dict()
 	for idx, row in enumerate(dfWithAbstract.to_numpy()):
