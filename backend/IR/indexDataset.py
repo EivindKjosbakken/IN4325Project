@@ -40,8 +40,13 @@ def indexDataset(numberOfDocumentsToRank = 1000):
 	tfIdfMatrix = tfIdfVectorizer.fit_transform(corpus) #this is the matrix
 	tfIdfMatrix =  tfIdfMatrix.toarray()
 
-	dataframe = pd.DataFrame(tfIdfMatrix) 
-	dataframe.to_csv("tfIdfMatrix.csv", header=False, index=False)
+	# dataframe = pd.DataFrame(tfIdfMatrix) 
+	# dataframe.to_csv("tfIdfMatrix.csv", header=False, index=False)
+	tfIdfDict = {"array" : tfIdfMatrix.tolist()}
+
+	with open("tfIdfMatrix.json", "w") as write_file:
+		json.dump((tfIdfDict), write_file)
+	
 
 	uniqueWords = tfIdfVectorizer.get_feature_names_out() #unique words
 	uniqueWordsIndexDict = dict()
