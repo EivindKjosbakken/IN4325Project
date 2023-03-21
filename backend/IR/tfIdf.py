@@ -15,7 +15,7 @@ import time
 
 # inference
 
-def executeQuery(query: str):
+def executeQuery(query: str, tfIdfMatrix = None):
     query = query.lower()
 
     with open('IR/idfDict.json') as json_file:
@@ -51,9 +51,6 @@ def executeQuery(query: str):
         Q[idx] = tfIdf  
 
     #compare the input query vector to the vectors of all documents in corpus
-    with open('IR/tfIdfMatrix.json') as json_file:
-            tfIdfDict = json.load(json_file)
-    tfIdfMatrix = np.array(tfIdfDict["array"])
 
     res = []
 
@@ -81,7 +78,7 @@ def executeQuery(query: str):
     return np.array(res)[:, 0]  
 
 def executeQueryLocal(query: str):
-
+    startTot = time.time()
     query = query.lower()
 
     with open('idfDict.json') as json_file:
@@ -117,18 +114,19 @@ def executeQueryLocal(query: str):
         Q[idx] = tfIdf  
 
     start = time.time()
+
     #compare the input query vector to the vectors of all documents in corpus
-    # tfIdfMatrix = np.genfromtxt('tfIdfMatrix.csv', delimiter=',')
-    with open('tfIdfMatrix.json') as json_file:
+
+
+    with open('tfIdfMatrix.json') as json_file: #TODO TEMP COMMENT
         tfIdfDict = json.load(json_file)
     tfIdfMatrix = np.array(tfIdfDict["array"])
-    # tfIdfMatrix = np.array(tfIdfDict["array"])
+    tfIdfMatrix = np.array(tfIdfDict["array"])
     print("open tfidf matrix: ", time.time() - start)
 
 
     res = []
 
-    print("open tfidf matrix: ", time.time() - start)
     start = time.time()
     for idx, doc in enumerate(tfIdfMatrix):
 
@@ -149,15 +147,16 @@ def executeQueryLocal(query: str):
     orderedCorpusAccordingToQuery = []
     for idx, cosineSim in res:
         orderedCorpusAccordingToQuery.append((corpus[str(int(idx))]))
+    print("total time: ", time.time() - startTot)
     return orderedCorpusAccordingToQuery[:5] #TODO only returning the first 5
     # """
     #only return the indices
     return np.array(res)[:, 0]  
 
 
-
-# results = executeQueryLocal("AI in python with pytorch") #results are a list of indices from most relvant to least relevant from the corpus
-# print(results[0][0])
+if __name__ == "__main__":
+    results = executeQueryLocal("AI in python with pytorch") #results are a list of indices from most relvant to least relevant from the corpus
+    print(results[0][0])
 # results = executeQuery("AI in python with pytorch") #results are a list of indices from most relvant to least relevant from the corpus
 # print(results[0])
 """
