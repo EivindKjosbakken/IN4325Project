@@ -8,15 +8,39 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import Counter
 import json
 import time
+from autocorrect import Speller
+from nltk.corpus import stopwords
+stop_words = set(stopwords.words('english'))
+from nltk.stem import PorterStemmer
 
 
 
+def preProcessQuery(query: str):
+    #remove stopwords
+    word_tokens = word_tokenize(query)
+    query = (" ".join([w for w in word_tokens if not w.lower() in stop_words]))
+    
+    #all lower case
+    query = query.lower()
 
+    #spell check
+    word_tokens = word_tokenize(query)
+    spell = Speller(lang='en')
+    query = (" ".join([spell(w) for w in word_tokens]))
+    
+    #stemming
+    stemmer = PorterStemmer()
+    query = (' '.join(stemmer.stem(token) for token in word_tokenize(query)))
+
+    return query
+    
 
 # inference
 
-def executeQuery(query: str, tfIdfMatrix = None, corpus = None):
-    query = query.lower()
+def executeQuery(query: str, tfIdfMatrix = None, corpus = None, numberOfElementsToReturn = 5):
+
+    #first preprocess query same way dataset is preprocessed
+    query = preProcessQuery(query)
 
     with open('IR/idfDict.json') as json_file:
         invDocFreq = json.load(json_file)
@@ -51,7 +75,6 @@ def executeQuery(query: str, tfIdfMatrix = None, corpus = None):
         Q[idx] = tfIdf  
 
     #compare the input query vector to the vectors of all documents in corpus
-
     res = []
 
     for idx, doc in enumerate(tfIdfMatrix):
@@ -64,21 +87,15 @@ def executeQuery(query: str, tfIdfMatrix = None, corpus = None):
     #sort the results
     res = res[res[:, 1].argsort()[::-1]]
 
-    # if we want to return the actualy abstracts, then return this, else is returns the indices
 
-
-    # """
     orderedCorpusAccordingToQuery = []
     for idx, cosineSim in res:
         orderedCorpusAccordingToQuery.append((corpus[str(int(idx))]))
-    return orderedCorpusAccordingToQuery[:5] #TODO only returning the first 5
-    # """
-    #only return the indices
-    return np.array(res)[:, 0]  
+    return orderedCorpusAccordingToQuery[:numberOfElementsToReturn] 
 
-def executeQueryLocal(query: str):
-    startTot = time.time()
-    query = query.lower()
+
+def executeQueryLocal(query: str, numberOfElementsToReturn = 5):
+    query = preProcessQuery(query)
 
     with open('idfDict.json') as json_file:
         invDocFreq = json.load(json_file)
@@ -117,7 +134,7 @@ def executeQueryLocal(query: str):
     #compare the input query vector to the vectors of all documents in corpus
 
 
-    with open('tfIdfMatrix.json') as json_file: #TODO TEMP COMMENT
+    with open('tfIdfMatrix.json') as json_file: 
         tfIdfDict = json.load(json_file)
     tfIdfMatrix = np.array(tfIdfDict["array"])
     tfIdfMatrix = np.array(tfIdfDict["array"])
@@ -129,7 +146,7 @@ def executeQueryLocal(query: str):
     start = time.time()
     for idx, doc in enumerate(tfIdfMatrix):
 
-        cosineSim = np.dot(doc,Q)/(np.linalg.norm(doc)*np.linalg.norm(Q))
+        cosineSim = np.dot(doc,Q)/((np.linalg.norm(doc)*np.linalg.norm(Q))+1) # +1 so we don't divide by 0
         res.append((idx, cosineSim))
 
     res = np.array(res)
@@ -138,30 +155,26 @@ def executeQueryLocal(query: str):
     res = res[res[:, 1].argsort()[::-1]]
 
     # if we want to return the actualy abstracts, then return this, else is returns the indices
-    start = time.time()
     with open('corpus.json') as json_file:
         corpus = json.load(json_file)
-    print("to ope ncorpus: ", time.time() - start)
-    # """
+
     orderedCorpusAccordingToQuery = []
     for idx, cosineSim in res:
         orderedCorpusAccordingToQuery.append((corpus[str(int(idx))]))
-    print("total time: ", time.time() - startTot)
-    return orderedCorpusAccordingToQuery[:5] #TODO only returning the first 5
-    # """
-    #only return the indices
-    return np.array(res)[:, 0]  
+    
+    return orderedCorpusAccordingToQuery[:numberOfElementsToReturn] 
+
 
 
 if __name__ == "__main__":
     results = executeQueryLocal("AI in python with pytorch") #results are a list of indices from most relvant to least relevant from the corpus
-    print(results[0][0])
-# results = executeQuery("AI in python with pytorch") #results are a list of indices from most relvant to least relevant from the corpus
-# print(results[0])
-"""
+    # print(len(results), len(results[0]))
+    results = np.array(results)
+    print(results[:2, 6])
 
-numberOfDocumentsToShow = 3
-for i in range(numberOfDocumentsToShow):
-    print(dfWithAbstract.iloc[int(results[i]), 6])
+    # with open('corpus.json') as json_file:
+        # corpus = json.load(json_file)
+    # print("\n\n\n",corpus[str(int(855))])
+    # results = executeQuery("AI in python with pytorch") #results are a list of indices from most relvant to least relevant from the corpus
+    # print(results[0])
 
-"""
