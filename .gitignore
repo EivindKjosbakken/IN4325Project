@@ -9,3 +9,5 @@ dist
 .DS_Store
 __pycache__
 data
+/backend/IR/*.json
+/backend/IR/*.csv

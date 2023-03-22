@@ -1,7 +1,7 @@
 <template>
   <div class="search-container">
     <div class="search-input">
-      <input class="search-bar" v-model="query" placeholder="Search for something" />
+      <input class="search-bar" v-model="query" v-on:keyup.enter="fetch(query)" placeholder="Search for something" />
     </div>
     <div class="search-button">
       <button class="button-primary" @click="fetch(query)">Search</button>
@@ -79,12 +79,11 @@
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  max-width: 500px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 20px;
   background-color: #fff;
   border-radius: 5px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
 }
 
 .search-input {
@@ -135,13 +134,9 @@
 .search-result {
   max-width: 1000px;
   margin: 0 auto;
-  padding-left: 20px;
-  padding-right: 20px;
-  padding-bottom: 20px;
+  padding: 10px;
   background-color: #fff;
   border-radius: 5px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-  /* font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif */
 }
 
 .search-result-title {
@@ -154,5 +149,4 @@
   color: #808080;
   margin-top: 0.5rem;
 }
-
 </style>
