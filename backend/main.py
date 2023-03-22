@@ -1,10 +1,10 @@
 from flask import Flask, request
 import requests
 from flask_cors import CORS, cross_origin
-
 from IR.tfIdf import executeQuery
 import json
 import numpy as np
+import time
 
 app = Flask(__name__)
 CORS(app)
@@ -26,10 +26,10 @@ print("opened")
 @app.route(f"{APP_URL}/retrieve", methods=["POST"])
 def retrieve():
     data = request.json  # if you want to retrieve data
-    # print(data["query"])
+    start = time.time()
     try:
         indices = executeQuery(data["query"], tfIdfMatrix, corpus)
-        return {"indices" : (indices[:3])}, 200
+        return {"results" : (indices[:3]), "time": time.time() - start}, 200
     except:
         print("cant execute query")
         return "error", 400
