@@ -38,13 +38,11 @@ def preProcessQuery(query: str):
 # inference
 
 def executeQuery(query: str, tfIdfMatrix = None, corpus = None, numberOfElementsToReturn = 5):
-
     #first preprocess query same way dataset is preprocessed
     query = preProcessQuery(query)
 
     with open('IR/idfDict.json') as json_file:
         invDocFreq = json.load(json_file)
-
 
     avgDocFreq = np.mean(np.array(list(invDocFreq.values())))
     uniqueWords = list(invDocFreq.keys())
@@ -55,8 +53,10 @@ def executeQuery(query: str, tfIdfMatrix = None, corpus = None, numberOfElements
     counter = Counter(tokens)
     words_count = len(tokens)
     
+    # print("time to here: ", time.time() - start2) # non relevant
     with open('IR/uniqueWordsDict.json') as json_file:
         uniqueWordsIndexDict = json.load(json_file)
+
 
     #calculate tf-idf scores for the input query
     for token in np.unique(tokens):
@@ -74,24 +74,17 @@ def executeQuery(query: str, tfIdfMatrix = None, corpus = None, numberOfElements
 
         Q[idx] = tfIdf  
 
+    # print("time to get query vector ", time.time() - start2) #non relevant
     #compare the input query vector to the vectors of all documents in corpus
-    res = []
-
-    for idx, doc in enumerate(tfIdfMatrix):
-
-        cosineSim = np.dot(doc,Q)/(np.linalg.norm(doc)*np.linalg.norm(Q))
-        res.append((idx, cosineSim))
-
-    res = np.array(res)
-
-    #sort the results
-    res = res[res[:, 1].argsort()[::-1]]
-
-
+ 
+    #vectorized version
+    cosineSim = np.dot(tfIdfMatrix,Q)/(np.linalg.norm(tfIdfMatrix)*np.linalg.norm(Q))
+    sortedIndices = np.argsort(cosineSim)[::-1] #reverse to have highest cosine similarity first
     orderedCorpusAccordingToQuery = []
-    for idx, cosineSim in res:
+    for idx in sortedIndices[:numberOfElementsToReturn]:
         orderedCorpusAccordingToQuery.append((corpus[str(int(idx))]))
-    return orderedCorpusAccordingToQuery[:numberOfElementsToReturn] 
+    
+    return orderedCorpusAccordingToQuery
 
 
 def executeQueryLocal(query: str, numberOfElementsToReturn = 5):
@@ -129,7 +122,6 @@ def executeQueryLocal(query: str, numberOfElementsToReturn = 5):
 
         Q[idx] = tfIdf  
 
-    start = time.time()
 
     #compare the input query vector to the vectors of all documents in corpus
 
@@ -138,31 +130,19 @@ def executeQueryLocal(query: str, numberOfElementsToReturn = 5):
         tfIdfDict = json.load(json_file)
     tfIdfMatrix = np.array(tfIdfDict["array"])
     tfIdfMatrix = np.array(tfIdfDict["array"])
-    print("open tfidf matrix: ", time.time() - start)
-
-
-    res = []
-
-    start = time.time()
-    for idx, doc in enumerate(tfIdfMatrix):
-
-        cosineSim = np.dot(doc,Q)/((np.linalg.norm(doc)*np.linalg.norm(Q))+1) # +1 so we don't divide by 0
-        res.append((idx, cosineSim))
-
-    res = np.array(res)
-
-    #sort the results
-    res = res[res[:, 1].argsort()[::-1]]
 
     # if we want to return the actualy abstracts, then return this, else is returns the indices
     with open('corpus.json') as json_file:
         corpus = json.load(json_file)
 
+    #vectorized version
+    cosineSim = np.dot(tfIdfMatrix,Q)/(np.linalg.norm(tfIdfMatrix)*np.linalg.norm(Q))
+    sortedIndices = np.argsort(cosineSim)[::-1] #reverse to have highest cosine similarity first
     orderedCorpusAccordingToQuery = []
-    for idx, cosineSim in res:
+    for idx in sortedIndices[:numberOfElementsToReturn]:
         orderedCorpusAccordingToQuery.append((corpus[str(int(idx))]))
     
-    return orderedCorpusAccordingToQuery[:numberOfElementsToReturn] 
+    return orderedCorpusAccordingToQuery
 
 
 
