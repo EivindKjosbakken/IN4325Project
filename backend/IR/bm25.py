@@ -68,24 +68,7 @@ def executeQuery(query: str, tfIdfMatrix=None, corpus=None, numberOfElementsToRe
     #for idx in sortedIndices[:numberOfElementsToReturn]:
     #    orderedCorpusAccordingToQuery.append((corpus[str(int(idx))]))
 
-def executeQuery(query: str, tfIdfMatrix=None, corpus=None, numberOfElementsToReturn=5):
-    # first preprocess query same way dataset is preprocessed
-    query = preProcessQuery(query)
-    query=query.split(" ")
-    with open('IR/bm25_tokenized_corpus.json') as json_file:
-        tokenized_corpus = json.load(json_file)
 
-
-    bm25 = BM25Okapi(tokenized_corpus)
-    doc_scores=bm25.get_scores(query)
-    sortedIndices = np.argsort(doc_scores)[::-1]
-
-
-    orderedCorpusAccordingToQuery = []
-    for idx in sortedIndices[:numberOfElementsToReturn]:
-        orderedCorpusAccordingToQuery.append((corpus[str(int(idx))]))
-
-    return orderedCorpusAccordingToQuery
 
 
 def executeQueryLocal(query: str, numberOfElementsToReturn=5):
