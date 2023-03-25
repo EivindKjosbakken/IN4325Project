@@ -11,6 +11,7 @@ import nltk
 from nltk.tokenize import word_tokenize
 from autocorrect import Speller
 from nltk.corpus import stopwords
+
 stop_words = set(stopwords.words('english'))
 import time
 
@@ -51,6 +52,13 @@ def storeUniqueWordsDict(tfIdfVectorizer):
         json.dump(uniqueWordsIndexDict, write_file)
     
     return uniqueWords
+
+
+def storeTokenizedCorpus(corpus):
+    tokenized_corpus = [doc.split(" ") for doc in corpus]
+    with open("bm25_tokenized_corpus.json", "w") as write_file:
+        json.dump(tokenized_corpus, write_file)
+
 
 def createAndStoreIdfValues(corpus, uniqueWords):
     invDocFreq = dict.fromkeys(uniqueWords, 0)
@@ -146,6 +154,9 @@ def indexDataset(numberOfDocumentsToRank = 1000):
 
     # store IDF values:
     createAndStoreIdfValues(corpus, uniqueWords)
+
+    #store tokenized corpus_for_bm25:
+    storeTokenizedCorpus(corpus)
 
 
 

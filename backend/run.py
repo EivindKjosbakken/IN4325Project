@@ -1,5 +1,3 @@
-
-
 from main import app as app1
 from werkzeug.serving import run_simple  # werkzeug development server
 
