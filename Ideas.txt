@@ -4,4 +4,9 @@ Ideas:
 -different pre-processing techniques on the abstract texts
 -basic tf-idf
 -BM25
--filtration (on research group, faculty etc)
+-filtration (on research group, faculty etc) when searching
+-remove html tags in preprocessing
+-tf idf should also check title and the other things (but don't implement yet because we are not sure if we are using tf idf)
+-ways to speed up backend (takes 1 second now)
+-should use the query log files to improve algorithm!
+
