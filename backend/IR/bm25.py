@@ -39,9 +39,22 @@ def preProcessQuery(query: str):
 
 # inference
 
+
+        # print("time to get query vector ", time.time() - start2) #non relevant
+    # compare the input query vector to the vectors of all documents in corpus
+
+    # vectorized version
+    # cosineSim = np.dot(tfIdfMatrix, Q) / (np.linalg.norm(tfIdfMatrix) * np.linalg.norm(Q))
+    # sortedIndices = np.argsort(cosineSim)[::-1]  # reverse to have highest cosine similarity first
+
+    #orderedCorpusAccordingToQuery = []
+    #for idx in sortedIndices[:numberOfElementsToReturn]:
+    #    orderedCorpusAccordingToQuery.append((corpus[str(int(idx))]))
+
 def executeQuery(query: str, tfIdfMatrix=None, corpus=None, numberOfElementsToReturn=5):
     # first preprocess query same way dataset is preprocessed
     query = preProcessQuery(query)
+    query=query.split(" ")
     with open('IR/bm25_tokenized_corpus.json') as json_file:
         tokenized_corpus = json.load(json_file)
 
@@ -56,19 +69,6 @@ def executeQuery(query: str, tfIdfMatrix=None, corpus=None, numberOfElementsToRe
         orderedCorpusAccordingToQuery.append((corpus[str(int(idx))]))
 
     return orderedCorpusAccordingToQuery
-
-        # print("time to get query vector ", time.time() - start2) #non relevant
-    # compare the input query vector to the vectors of all documents in corpus
-
-    # vectorized version
-    # cosineSim = np.dot(tfIdfMatrix, Q) / (np.linalg.norm(tfIdfMatrix) * np.linalg.norm(Q))
-    # sortedIndices = np.argsort(cosineSim)[::-1]  # reverse to have highest cosine similarity first
-
-    #orderedCorpusAccordingToQuery = []
-    #for idx in sortedIndices[:numberOfElementsToReturn]:
-    #    orderedCorpusAccordingToQuery.append((corpus[str(int(idx))]))
-
-
 
 
 def executeQueryLocal(query: str, numberOfElementsToReturn=5):
