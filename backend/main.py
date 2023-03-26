@@ -7,8 +7,17 @@ import json
 import numpy as np
 import time
 import gensim.downloader as api
+import os
+import traceback
 
 import os
+
+app = Flask(__name__)
+CORS(app)
+
+
+
+
 
 app = Flask(__name__)
 CORS(app)
@@ -38,25 +47,19 @@ model.init_sims()
 print('initialized')
 ###comment out until here
 
+
+
 @app.route(f"{APP_URL}/retrieve", methods=["POST"])
 def retrieve():
     data = request.json  # if you want to retrieve data
     start = time.time()
     try:
-
-
         indices = executeQuery(data["query"],model, tfIdfMatrix, corpus)
         return {"results" : (indices[:3]), "time": time.time() - start}, 200
     except:
         print("cant execute query")
-        return "error", 400
+        return ("error: ", traceback.print_exc()), 400
 
-
-    isTest = True
-
-    if isTest:
-        return "Called test endpoint ", 200
-    return "Test api method failed", 400
 
 
 @app.route(f"{APP_URL}/testGet", methods=["GET"])
