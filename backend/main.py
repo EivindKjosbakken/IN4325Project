@@ -7,6 +7,8 @@ import json
 import numpy as np
 import time
 import os
+import traceback
+
 
 app = Flask(__name__)
 CORS(app)
@@ -35,14 +37,8 @@ def retrieve():
         return {"results" : (indices[:3]), "time": time.time() - start}, 200
     except:
         print("cant execute query")
-        return "error", 400
+        return ("error: ", traceback.print_exc()), 400
 
-
-    isTest = True
-
-    if isTest:
-        return "Called test endpoint ", 200
-    return "Test api method failed", 400
 
 
 @app.route(f"{APP_URL}/testGet", methods=["GET"])

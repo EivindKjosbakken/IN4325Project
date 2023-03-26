@@ -163,6 +163,5 @@ def indexDataset(numberOfDocumentsToRank = 1000):
 
 
 
-#TODO husk å stemme input query også! + stopword (alle preprocessing techniques må brukes på query og!)
 #order: remove stop words, all lower case, correct spelling, stemming
 indexDataset(1000)
