@@ -27,12 +27,12 @@ def expand_query(query,model):
         expanded_query+=i
         expanded_query+=' '
 
-    #expanded_query+=': '
+    expanded_query+=': '
     for word,score in similar_words:
         expanded_query+=word
         expanded_query+=' '
 
-    #expanded_query+='\n'
+    expanded_query+='\n'
 
     with open('query_expansions.txt', 'a+') as f:
         f.write(expanded_query)
