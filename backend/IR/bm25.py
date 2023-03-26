@@ -10,25 +10,57 @@ import json
 import time
 from autocorrect import Speller
 from nltk.corpus import stopwords
+from nltk.corpus import wordnet
 from rank_bm25 import BM25Okapi
+
+
 
 
 stop_words = set(stopwords.words('english'))
 from nltk.stem import PorterStemmer
 
 
-def preProcessQuery(query: str):
+def expand_query(query,model):
+    similar_words = model.most_similar(positive=query,restrict_vocab=10000, topn=5)
+    expanded_query=''
+    for i in query:
+        expanded_query+=i
+        expanded_query+=' '
+
+    expanded_query+=': '
+    for word,score in similar_words:
+        expanded_query+=word
+        expanded_query+=' '
+
+    expanded_query+='\n'
+
+    with open('query_expansions.txt', 'a+') as f:
+        f.write(expanded_query)
+
+
+    #for word,score in similar_words:
+    #    print(word)
+
+
+def preProcessQuery(query: str,model):
     # remove stopwords
+    #with open('query_expansions.txt', 'w') as f:
+    #    f.write(query_expansions)
+
     word_tokens = word_tokenize(query)
     query = (" ".join([w for w in word_tokens if not w.lower() in stop_words]))
 
     # all lower case
     query = query.lower()
-
     # spell check
     word_tokens = word_tokenize(query)
+
+    if model!=None:
+        expand_query(word_tokens,model)
+
     spell = Speller(lang='en')
     query = (" ".join([spell(w) for w in word_tokens]))
+
 
     # stemming
     stemmer = PorterStemmer()
@@ -51,9 +83,10 @@ def preProcessQuery(query: str):
     #for idx in sortedIndices[:numberOfElementsToReturn]:
     #    orderedCorpusAccordingToQuery.append((corpus[str(int(idx))]))
 
-def executeQuery(query: str, tfIdfMatrix=None, corpus=None, numberOfElementsToReturn=5):
+def executeQuery(query: str, model, tfIdfMatrix=None, corpus=None, numberOfElementsToReturn=5):
     # first preprocess query same way dataset is preprocessed
-    query = preProcessQuery(query)
+
+    query = preProcessQuery(query,model)
     query=query.split(" ")
     with open('IR/bm25_tokenized_corpus.json') as json_file:
         tokenized_corpus = json.load(json_file)
