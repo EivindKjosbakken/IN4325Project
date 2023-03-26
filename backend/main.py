@@ -6,8 +6,17 @@ from IR.bm25 import executeQuery
 import json
 import numpy as np
 import time
+import gensim.downloader as api
 import os
 import traceback
+
+import os
+
+app = Flask(__name__)
+CORS(app)
+
+
+
 
 
 app = Flask(__name__)
@@ -27,13 +36,25 @@ with open('IR/corpus.json') as json_file:
 print("opened")
 
 
+model=None
+
+###Comment out if not query expansion
+start = time.time()
+model = api.load('word2vec-google-news-300')
+print('model loaded')
+print(f'Time to load: {time.time()-start}')
+model.init_sims()
+print('initialized')
+###comment out until here
+
+
 
 @app.route(f"{APP_URL}/retrieve", methods=["POST"])
 def retrieve():
     data = request.json  # if you want to retrieve data
     start = time.time()
     try:
-        indices = executeQuery(data["query"], tfIdfMatrix, corpus)
+        indices = executeQuery(data["query"],model, tfIdfMatrix, corpus)
         return {"results" : (indices[:3]), "time": time.time() - start}, 200
     except:
         print("cant execute query")
