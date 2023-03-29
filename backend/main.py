@@ -9,11 +9,10 @@ import time
 import gensim.downloader as api
 import os
 import traceback
+from transformers import pipeline
+
 
 import os
-
-app = Flask(__name__)
-CORS(app)
 
 
 
@@ -38,14 +37,17 @@ print("opened")
 
 model=None
 
-###Comment out if not query expansion
-start = time.time()
-model = api.load('word2vec-google-news-300')
-print('model loaded')
-print(f'Time to load: {time.time()-start}')
-model.init_sims()
-print('initialized')
-###comment out until here
+
+autocomplete_model = pipeline('text-generation', model='gpt2')
+
+# ###Comment out if not query expansion
+# start = time.time()
+# model = api.load('word2vec-google-news-300')
+# print('model loaded')
+# print(f'Time to load: {time.time()-start}')
+# model.init_sims()
+# print('initialized')
+# ###comment out until here
 
 
 
@@ -62,7 +64,7 @@ def retrieve():
 
 
 
-@app.route(f"{APP_URL}/testGet", methods=["GET"])
+@app.route(f"{APP_URL}/testGet", methods=["POST"])
 def testGetApi():
     print("get test endpoint is called")
 
@@ -71,3 +73,10 @@ def testGetApi():
     if isTest:
         return {"Test": "worked with get"}, 200
     return "Test api method failed", 400
+
+@app.route(f"{APP_URL}/autocomplete", methods=["POST","GET"])
+def autocomplete():
+    if request.method == "GET":
+        text = request.args.get('text')
+        suggestions = autocomplete_model(text, max_length=30, num_return_sequences=3)
+        return jsonify({'suggestions': suggestions})
