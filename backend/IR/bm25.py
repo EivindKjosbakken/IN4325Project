@@ -13,9 +13,6 @@ from nltk.corpus import stopwords
 from nltk.corpus import wordnet
 from rank_bm25 import BM25Okapi
 
-
-
-
 stop_words = set(stopwords.words('english'))
 from nltk.stem import PorterStemmer
 
@@ -74,13 +71,26 @@ def executeQuery(query: str, model, tfIdfMatrix=None, corpus=None, numberOfEleme
 
     query = preProcessQuery(query,model)
     query=query.split(" ")
-    with open('IR/bm25_tokenized_corpus.json') as json_file:
-        tokenized_corpus = json.load(json_file)
+    with open('IR/bm25_tokenized_abstract_corpus.json') as json_file1: #TODO maybe load on startup of backend?
+        tokenized_abstract_corpus = json.load(json_file1)
+    with open('IR/bm25_tokenized_title_corpus.json') as json_file2: #TODO maybe load on startup of backend?
+        tokenized_title_corpus = json.load(json_file2)
+
+    #for abstract
+    bm25Abstract = BM25Okapi(tokenized_abstract_corpus)
+    abstract_doc_scores = bm25Abstract.get_scores(query)
+
+    #for title
+    bm25Title = BM25Okapi(tokenized_title_corpus)
+    title_doc_scores = bm25Title.get_scores(query)
+    
+
+    #assign weight (importance) to features (make sure they add to 1):
+    abstractWeight, titleWeight = 0.3, 0.7
+    combined_doc_scores = (abstract_doc_scores*abstractWeight) + (title_doc_scores*titleWeight)
 
 
-    bm25 = BM25Okapi(tokenized_corpus)
-    doc_scores=bm25.get_scores(query)
-    sortedIndices = np.argsort(doc_scores)[::-1]
+    sortedIndices = np.argsort(combined_doc_scores)[::-1]
 
 
     orderedCorpusAccordingToQuery = []

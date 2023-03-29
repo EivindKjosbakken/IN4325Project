@@ -26,9 +26,9 @@ APP_URL = "/"
 
 print("opening tf idf matrix and corpus")
 
-with open('IR/tfIdfMatrix.json') as json_file:
-    tfIdfDict = json.load(json_file)
-tfIdfMatrix = np.array(tfIdfDict["array"])
+# with open('IR/tfIdfMatrix.json') as json_file: #NOTE commented out while not using tfidf
+#     tfIdfDict = json.load(json_file)
+# tfIdfMatrix = np.array(tfIdfDict["array"])
 
 with open('IR/corpus.json') as json_file:
     corpus = json.load(json_file)
@@ -36,7 +36,6 @@ print("opened")
 
 
 model=None
-
 
 autocomplete_model = pipeline('text-generation', model='gpt2')
 
@@ -56,7 +55,9 @@ def retrieve():
     data = request.json  # if you want to retrieve data
     start = time.time()
     try:
-        indices = executeQuery(data["query"],model, tfIdfMatrix, corpus)
+        # indices = executeQuery(data["query"],model, tfIdfMatrix, corpus) #NOTE only for tfidf
+        indices = executeQuery(query = data["query"],model = model, tfIdfMatrix = None, corpus = corpus)
+
         return {"results" : (indices[:3]), "time": time.time() - start}, 200
     except:
         print("cant execute query")
