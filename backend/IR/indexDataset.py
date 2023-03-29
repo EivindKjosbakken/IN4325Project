@@ -14,66 +14,6 @@ from nltk.corpus import stopwords
 stop_words = set(stopwords.words('english'))
 import time
 
-def getDfWithAbstracts():
-    dfRepo1 = pd.read_csv("../../data/tudelft_repository_1679269258.csv")
-    dfRepo2 = pd.read_csv("../../data/tudelft_repository_1679269271.csv")
-    dfRepo3 = pd.read_csv("../../data/tudelft_repository_1679269276.csv")
-    dfRepo4 = pd.read_csv("../../data/tudelft_repository_1679269281.csv")
-    dfRepo5 = pd.read_csv("../../data/tudelft_repository_1679269287.csv")
-    dfRepo6 = pd.read_csv("../../data/tudelft_repository_1679269292.csv")
-
-    dfRepo = pd.concat([dfRepo1, dfRepo2, dfRepo3, dfRepo4, dfRepo5, dfRepo6])
-    dfWithAbstract = dfRepo.dropna(subset=["abstract"]) #elements without abstract
-    dfWithAbstract = dfWithAbstract.replace(np.nan, '', regex=True)
-
-    return dfWithAbstract
-
-def createAndStoreTfIdfMatrix(corpus):
-
-    tfIdfVectorizer=TfidfVectorizer(use_idf=True)
-    tfIdfMatrix = tfIdfVectorizer.fit_transform(corpus) #this is the matrix
-    tfIdfMatrix =  tfIdfMatrix.toarray()
-
-    tfIdfDict = {"array" : tfIdfMatrix.tolist()}
-
-    with open("tfIdfMatrix.json", "w") as write_file:
-        json.dump((tfIdfDict), write_file)
-    
-    return tfIdfVectorizer
-
-def storeUniqueWordsDict(tfIdfVectorizer):
-    uniqueWords = tfIdfVectorizer.get_feature_names_out() #unique words
-    uniqueWordsIndexDict = dict()
-    for idx, word in enumerate(uniqueWords):
-        uniqueWordsIndexDict[word] = idx
-        
-    with open("uniqueWordsDict.json", "w") as write_file:
-        json.dump(uniqueWordsIndexDict, write_file)
-    
-    return uniqueWords
-
-def createAndStoreIdfValues(corpus, uniqueWords):
-    invDocFreq = dict.fromkeys(uniqueWords, 0)
-    numDocuments = len(corpus)
-
-    for text in corpus:
-
-        tokens = set(text.split()) #unique
-        for token in tokens: 
-            if (token in invDocFreq):
-                invDocFreq[token] += 1
-    for key, value in invDocFreq.items():
-        invDocFreq[key] = np.log(numDocuments/(value+1)) 
-
-    avgDocFreq = np.mean(np.array(list(invDocFreq.values())))
-
-    with open("idfDict.json", "w") as write_file:
-        json.dump(invDocFreq, write_file)
-
-#different preprocessing techniques -> make a preprocessed corpus to index on:
-
-
-
 #stopwords (make the indexes from stopwords, but remember to return the actual abstract, not the stopword abstracts)
 def removeStopwords(corpus : list):
     """remove stopwords from corpus"""
@@ -116,42 +56,121 @@ def stemming(corpus : list):
     return stemmedCorpus
 
 
-def indexDataset(numberOfDocumentsToRank = 1000):
-    #read data in
-    dfWithAbstract = getDfWithAbstracts()
-
-    corpusDict = dict()
-    for idx, row in enumerate(dfWithAbstract.to_numpy()):
-        corpusDict[idx] = list(row)
-
-    with open("corpus.json", "w") as write_file:
-        json.dump(corpusDict, write_file)
-
-
-    npWithAbstract = dfWithAbstract.to_numpy()[:numberOfDocumentsToRank, :] 
-    corpus = npWithAbstract[:, 6] #6th fol is the abstract
-    #preprocess corpus, NOTE: order is important (atleast have stemming in the end!)
-    start = time.time()
+def runPreprocessing(corpus : list):
+    """NOTE: order is important (atleast have stemming in the end!)"""
     corpus = removeStopwords(corpus)
     corpus = allLowerCase(corpus)
     # corpus = correctSpelling(corpus) #NOTE: this takes quite a while, can comment out if you want
     corpus = stemming(corpus)
-    print("preprocessing took: ", time.time() - start)
+    return corpus
+
+
+
+def getDfWithAbstracts():
+    dfRepo1 = pd.read_csv("../../data/tudelft_repository_1679269258.csv")
+    dfRepo2 = pd.read_csv("../../data/tudelft_repository_1679269271.csv")
+    dfRepo3 = pd.read_csv("../../data/tudelft_repository_1679269276.csv")
+    dfRepo4 = pd.read_csv("../../data/tudelft_repository_1679269281.csv")
+    dfRepo5 = pd.read_csv("../../data/tudelft_repository_1679269287.csv")
+    dfRepo6 = pd.read_csv("../../data/tudelft_repository_1679269292.csv")
+
+    dfRepo = pd.concat([dfRepo1, dfRepo2, dfRepo3, dfRepo4, dfRepo5, dfRepo6])
+    dfWithAbstract = dfRepo.dropna(subset=["abstract"]) #elements without abstract
+    dfWithAbstract = dfWithAbstract.replace(np.nan, '', regex=True)
+
+    return dfWithAbstract
+
+def createAndStoreTfIdfMatrix(corpus, filename = "tfIdfMatrix.json"):
+    """make the tf idf matrix from the corpus, and saves it to file"""
+    tfIdfVectorizer=TfidfVectorizer(use_idf=True)
+    tfIdfMatrix = tfIdfVectorizer.fit_transform(corpus) #this is the matrix
+    tfIdfMatrix =  tfIdfMatrix.toarray()
+
+    tfIdfDict = {"array" : tfIdfMatrix.tolist()}
+
+    with open(filename, "w") as write_file:
+        json.dump((tfIdfDict), write_file)
+    
+    return tfIdfVectorizer
+
+def storeUniqueWordsDict(tfIdfVectorizer, filename):
+    uniqueWords = tfIdfVectorizer.get_feature_names_out() #unique words
+    # uniqueWords = runPreprocessing(uniqueWords) #TODO this must also use preprocessing OR does it ? (unsure now), error with shapes if this is ran
+    uniqueWordsIndexDict = dict()
+    for idx, word in enumerate(uniqueWords):
+        uniqueWordsIndexDict[word] = idx
+        
+    with open(filename, "w") as write_file:
+        json.dump(uniqueWordsIndexDict, write_file)
+    
+    return uniqueWords
+
+def createAndStoreIdfValues(corpus, uniqueWords, filename):
+    invDocFreq = dict.fromkeys(uniqueWords, 0)
+    numDocuments = len(corpus)
+
+    for text in corpus:
+
+        tokens = set(text.split()) #unique
+        for token in tokens: 
+            if (token in invDocFreq):
+                invDocFreq[token] += 1
+    for key, value in invDocFreq.items():
+        invDocFreq[key] = np.log(numDocuments/(value+1)) 
+
+    avgDocFreq = np.mean(np.array(list(invDocFreq.values())))
+
+    with open(filename, "w") as write_file:
+        json.dump(invDocFreq, write_file)
+
+#different preprocessing techniques -> make a preprocessed corpus to index on:
+
+
+
+
+def indexDataset(numberOfDocumentsToRank = 1000):
+    #read data in
+    print("Reading in data...")
+    dfWithAbstract = getDfWithAbstracts()
+    titleCorpus = dfWithAbstract["title"].to_numpy()[:numberOfDocumentsToRank] #NOTE: dont grab all elements for now
+
+    corpusDict = dict() #store in dictionary for fast access
+    for idx, row in enumerate(dfWithAbstract.to_numpy()):
+        corpusDict[idx] = list(row)
+    with open("corpus.json", "w") as write_file:
+        json.dump(corpusDict, write_file)
+
+    npWithAbstract = dfWithAbstract.to_numpy()[:numberOfDocumentsToRank, :] 
+    abstractcCorpus = npWithAbstract[:, 6] #6th fol is the abstract
+
+    #preprocess
+    print("Preprocessing data...")
+    abstractcCorpus = runPreprocessing(abstractcCorpus)
+    titleCorpus = runPreprocessing(titleCorpus)
 
     #implement tf-idf with sklearn:
-    tfIdfVectorizer = createAndStoreTfIdfMatrix(corpus)
-    
+    print("Creating and storing TF-IDF matrices...") 
+    start = time.time()
+    abstractTfIdfVectorizer = createAndStoreTfIdfMatrix(abstractcCorpus, "abstractTfIdfMatrix.json")
+    titleTfIdfVectorizer = createAndStoreTfIdfMatrix(titleCorpus, "titleTfIdfMatrix.json")
+    print("Took: ", time.time() - start)
     #store unique words dict
-    uniqueWords = storeUniqueWordsDict(tfIdfVectorizer)
+    print("Storing unique words...")
+    abstractUniqueWords = storeUniqueWordsDict(abstractTfIdfVectorizer, "abstractUniqueWordsDict.json")
+    titleUniqueWords = storeUniqueWordsDict(titleTfIdfVectorizer, "titleUniqueWordsDict.json")
 
     # store IDF values:
-    createAndStoreIdfValues(corpus, uniqueWords)
+    print("Creating and storing IDF values...")
+    createAndStoreIdfValues(abstractcCorpus, abstractUniqueWords, "abstractIdfDict.json")
+    createAndStoreIdfValues(titleCorpus, titleUniqueWords, "titleIdfDict.json")
+    print("Done!")
 
 
 
 
+if __name__ == "__main__":
+    indexDataset(1000)
+    # with open('abstractUniqueWordsDict.json') as json_file:
+    #     abstractUniqueWordsIndexDict = json.load(json_file)
 
-
-#TODO husk å stemme input query også! + stopword (alle preprocessing techniques må brukes på query og!)
-#order: remove stop words, all lower case, correct spelling, stemming
-indexDataset(1000)
+    # print(abstractUniqueWordsIndexDict.keys())

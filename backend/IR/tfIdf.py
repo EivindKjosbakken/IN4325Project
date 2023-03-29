@@ -37,49 +37,79 @@ def preProcessQuery(query: str):
 
 # inference
 
-def executeQuery(query: str, tfIdfMatrix = None, corpus = None, numberOfElementsToReturn = 5):
+def executeQuery(query: str, abstractTfIdfMatrix = None, titleTfIdfMatrix = None, corpus = None, numberOfElementsToReturn = 5):
     #first preprocess query same way dataset is preprocessed
     query = preProcessQuery(query)
-
-    with open('IR/idfDict.json') as json_file:
-        invDocFreq = json.load(json_file)
-
-    avgDocFreq = np.mean(np.array(list(invDocFreq.values())))
-    uniqueWords = list(invDocFreq.keys())
-
-    #make new vector of the input query
-    Q = np.zeros(len(uniqueWords)) 
     tokens = query.split()
     counter = Counter(tokens)
     words_count = len(tokens)
-    
-    # print("time to here: ", time.time() - start2) # non relevant
-    with open('IR/uniqueWordsDict.json') as json_file:
-        uniqueWordsIndexDict = json.load(json_file)
+    #open abstract files
+    with open('IR/abstractIdfDict.json') as json_file:
+        abstractInvDocFreq = json.load(json_file)
+    abstractAvgDocFreq = np.mean(np.array(list(abstractInvDocFreq.values())))
+    abstractUniqueWords = list(abstractInvDocFreq.keys())
+    with open('IR/abstractUniqueWordsDict.json') as json_file:
+        abstractUniqueWordsIndexDict = json.load(json_file)
 
+    abstractQ = np.zeros(len(abstractUniqueWords))
+
+    #open title files
+    with open('IR/titleIdfDict.json') as json_file:
+        titleInvDocFreq = json.load(json_file)
+    titleAvgDocFreq = np.mean(np.array(list(titleInvDocFreq.values())))
+    titleUniqueWords = list(titleInvDocFreq.keys())
+    with open('IR/titleUniqueWordsDict.json') as json_file:
+        titleUniqueWordsIndexDict = json.load(json_file)
+
+    titleQ = np.zeros(len(titleUniqueWords))
+    #make new vector of the input query
 
     #calculate tf-idf scores for the input query
     for token in np.unique(tokens):
-        if token not in uniqueWords: #cannot calc for word that does not exist
-            print(f"word {token} does not exist in vocabulary")
-            continue
+        #compare abstract
+        if token in abstractUniqueWordsIndexDict: #cannot calc for word that does not exist
+            tf = counter[token]/words_count
+            idf = abstractInvDocFreq.get(token, abstractAvgDocFreq)
+            tfIdf = tf*idf
+            #find idx of word in the vector
+            idx = abstractUniqueWordsIndexDict.get(token, None)
+            if (idx is None):
+                print("abstract continuing")
+                continue
+            abstractQ[idx] = tfIdf      
+        else:
+            print(f"word {token} does not exist in abstract vocabulary")
 
-        tf = counter[token]/words_count
-        idf = invDocFreq.get(token, avgDocFreq)
-        tfIdf = tf*idf
-        #find idx of word in the vector
-        idx = uniqueWordsIndexDict.get(token, None)
-        if (idx is None):
-            continue
+        #compare title
+        if token in titleUniqueWordsIndexDict: #cannot calc for word that does not exist
+            tf = counter[token]/words_count
+            idf = titleInvDocFreq.get(token, titleAvgDocFreq)
+            tfIdf = tf*idf
+            #find idx of word in the vector
+            idx = titleUniqueWordsIndexDict.get(token, None)
+            if (idx is None):
+                print("title continuing")
+                continue
+            titleQ[idx] = tfIdf      
+        else:
+            print(f"word {token} does not exist in title vocabulary")
 
-        Q[idx] = tfIdf  
 
-    # print("time to get query vector ", time.time() - start2) #non relevant
+
     #compare the input query vector to the vectors of all documents in corpus
- 
-    #vectorized version
-    cosineSim = np.dot(tfIdfMatrix,Q)/(np.linalg.norm(tfIdfMatrix)*np.linalg.norm(Q))
-    sortedIndices = np.argsort(cosineSim)[::-1] #reverse to have highest cosine similarity first
+
+    #cosine sim for abstract
+    abstractWeight = 0.3 #NOTE: defining importance of feature here
+    abstractCosineSim = (np.dot(abstractTfIdfMatrix,abstractQ)/(np.linalg.norm(abstractTfIdfMatrix)*np.linalg.norm(abstractQ)))*abstractWeight
+
+    #cosine sim for title
+    titleWeight = 0.7
+    titleCosineSim = (np.dot(titleTfIdfMatrix,titleQ)/(np.linalg.norm(titleTfIdfMatrix)*np.linalg.norm(titleQ)))*titleWeight
+
+    totalCosineSim = (abstractCosineSim + titleCosineSim) #pluss together each element in arrays
+
+    sortedIndices = np.argsort(totalCosineSim)[::-1] #reverse to have highest cosine similarity first
+    print(sortedIndices[:5])
     orderedCorpusAccordingToQuery = []
     for idx in sortedIndices[:numberOfElementsToReturn]:
         orderedCorpusAccordingToQuery.append((corpus[str(int(idx))]))
@@ -90,20 +120,25 @@ def executeQuery(query: str, tfIdfMatrix = None, corpus = None, numberOfElements
 def executeQueryLocal(query: str, numberOfElementsToReturn = 5):
     query = preProcessQuery(query)
 
-    with open('idfDict.json') as json_file:
-        invDocFreq = json.load(json_file)
+    with open('abstractIdfDict.json') as json_file:
+        abstractInvDocFreq = json.load(json_file)
+    abstractAvgDocFreq = np.mean(np.array(list(abstractInvDocFreq.values())))
+    abstractUniqueWords = list(abstractInvDocFreq.keys())
+
+    with open('titleIdfDict.json') as json_file:
+        titleInvDocFreq = json.load(json_file)
+    titleAvgDocFreq = np.mean(np.array(list(titleInvDocFreq.values())))
+    titleUniqueWords = list(titleInvDocFreq.keys())
 
 
-    avgDocFreq = np.mean(np.array(list(invDocFreq.values())))
-    uniqueWords = list(invDocFreq.keys())
 
     #make new vector of the input query
-    Q = np.zeros(len(uniqueWords)) 
+    abstractQ = np.zeros(len(abstractUniqueWords)) 
     tokens = query.split()
     counter = Counter(tokens)
     words_count = len(tokens)
     
-    with open('uniqueWordsDict.json') as json_file:
+    with open('abstractUniqueWordsDict.json.json') as json_file:
         uniqueWordsIndexDict = json.load(json_file)
 
     #calculate tf-idf scores for the input query
@@ -126,7 +161,7 @@ def executeQueryLocal(query: str, numberOfElementsToReturn = 5):
     #compare the input query vector to the vectors of all documents in corpus
 
 
-    with open('tfIdfMatrix.json') as json_file: 
+    with open('abstractTfIdfMatrix.json') as json_file: 
         tfIdfDict = json.load(json_file)
     tfIdfMatrix = np.array(tfIdfDict["array"])
     tfIdfMatrix = np.array(tfIdfDict["array"])
