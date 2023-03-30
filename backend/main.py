@@ -10,6 +10,7 @@ import gensim.downloader as api
 import os
 import traceback
 from transformers import pipeline
+import tensorflow_hub as hub
 
 
 import os
@@ -39,6 +40,12 @@ model=None
 
 autocomplete_model = pipeline('text-generation', model='gpt2')
 
+#load embedder and information it needs for query reformulation
+embedder = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
+loaded_arrays = np.load('IR/goodQueries.npz', allow_pickle = True)
+goodQueries = [np.array(loaded_arrays[file]) for file in loaded_arrays.files]
+corpusEmbedding = np.load("IR/corpusEmbedding.npy")
+
 # ###Comment out if not query expansion
 # start = time.time()
 # model = api.load('word2vec-google-news-300')
@@ -56,7 +63,7 @@ def retrieve():
     start = time.time()
     try:
         # indices = executeQuery(data["query"],model, tfIdfMatrix, corpus) #NOTE only for tfidf
-        indices = executeQuery(query = data["query"],model = model, tfIdfMatrix = None, corpus = corpus)
+        indices = executeQuery(query = data["query"],model = model, tfIdfMatrix = None, corpus = corpus, numberOfElementsToReturn=5, embedder=embedder, goodQueries=goodQueries, corpusEmbedding=corpusEmbedding)
 
         return {"results" : (indices[:3]), "time": time.time() - start}, 200
     except:
