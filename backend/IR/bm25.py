@@ -66,7 +66,7 @@ def preProcessQuery(query: str,model):
 
 
 
-def executeQuery(query: str, model, tfIdfMatrix=None, corpus=None, numberOfElementsToReturn=5):
+def executeQuery(query: str, model, tfIdfMatrix=None, corpus=None, numberOfElementsToReturn=100):
     # first preprocess query same way dataset is preprocessed
 
     query = preProcessQuery(query,model)
@@ -100,7 +100,7 @@ def executeQuery(query: str, model, tfIdfMatrix=None, corpus=None, numberOfEleme
     return orderedCorpusAccordingToQuery
 
 
-def executeQueryLocal(query: str, numberOfElementsToReturn=5):
+def executeQueryLocal(query: str, numberOfElementsToReturn=100):
     # first preprocess query same way dataset is preprocessed
     query = preProcessQuery(query)
     query = query.split(" ")
