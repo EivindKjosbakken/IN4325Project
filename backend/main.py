@@ -56,6 +56,25 @@ corpusEmbedding = np.load("IR/corpusEmbedding.npy")
 # ###comment out until here
 
 
+# Data index meanings
+# 0: uuid, 1: repository link, 2: title, 3: author, 4: contributor, 5: publication year, 6: abstract, 7: subject topic,
+# 8: language, 9: publication type, 10: publisher, 11: isbn, 12: issn, 13: patent, 14: patent status, 15: bibliographic note,
+# 16: access restriction, 17: embargo date, 18: faculty, 19: department, 20: research group, 21: programme, 22: project, 23: coordinates
+def executeFilter(indices, filters):
+    getIndex = { 0: "uuid", 1: "repository link", 2: "title", 3: "author", 4: "contributor", 5: "publication year", 6: "abstract", 7: "subject topic",
+    8: "language", 9: "publication type", 10: "publisher", 11: "isbn", 12: "issn", 13: "patent", 14: "patent status", 15: "bibliographic note",
+    16: "access restriction", 17: "embargo date", 18: "faculty", 19: "department", 20: "research group", 21: "programme", 22: "project", 23: "coordinates" }
+    for filter in filters:
+        if len(filters[filter]) == 0:
+            continue
+        index = [k for k, v in getIndex.items() if v == filter]
+        for element in indices[:]:  # Iterate over a copy of the original list
+            for f in filters[filter]:
+                if f in element[index[0]]:
+                    break
+            else:
+                indices.remove(element)
+    return indices
 
 @app.route(f"{APP_URL}/retrieve", methods=["POST"])
 def retrieve():
@@ -64,8 +83,13 @@ def retrieve():
     try:
         # indices = executeQuery(data["query"],model, tfIdfMatrix, corpus) #NOTE only for tfidf
         indices = executeQuery(query = data["query"],model = model, tfIdfMatrix = None, corpus = corpus, numberOfElementsToReturn=5, embedder=embedder, goodQueries=goodQueries, corpusEmbedding=corpusEmbedding)
+        print(data)
 
-        return {"results" : (indices[:3]), "time": time.time() - start}, 200
+        filters = data.get("filters", None)
+        if (filters):
+            indices = executeFilter(indices, filters)
+
+        return {"results" : (indices[:10]), "time": time.time() - start}, 200
     except:
         print("cant execute query")
         return ("error: ", traceback.print_exc()), 400
