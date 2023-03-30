@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import requests
 from flask_cors import CORS, cross_origin
 #from IR.tfIdf import executeQuery
@@ -76,7 +76,6 @@ def retrieve():
     try:
         # indices = executeQuery(data["query"],model, tfIdfMatrix, corpus) #NOTE only for tfidf
         indices = executeQuery(query = data["query"],model = model, tfIdfMatrix = None, corpus = corpus)
-        print(data)
         indices = executeFilter(indices, data["filters"])
 
         return {"results" : (indices[:3]), "time": time.time() - start}, 200
@@ -98,6 +97,14 @@ def testGetApi():
 
 @app.route(f"{APP_URL}/autocomplete", methods=["POST","GET"])
 def autocomplete():
+    if request.method == "POST":
+        data = request.json  # if you want to retrieve data
+        suggestions = autocomplete_model(data["query"], max_length=30, num_return_sequences=3)
+        print("=========")
+        print(suggestions)
+        # broken for now
+        return jsonify({suggestions})
+
     if request.method == "GET":
         text = request.args.get('text')
         suggestions = autocomplete_model(text, max_length=30, num_return_sequences=3)

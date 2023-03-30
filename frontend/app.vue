@@ -3,7 +3,10 @@
     <div class="search-container">
       <div class="search-input">
         <img src="./assets/GoogIR.png" width="150"/>
-        <input class="search-bar" v-model="query" v-on:keyup.enter="fetch(query)" placeholder="Search for something" />
+        <input class="search-bar" v-model="query" v-on:input="autosuggest(query)" v-on:keyup.enter="fetch(query, filters)" placeholder="Search for something" />
+        <ul v-if="suggestions.length > 0">
+          <li v-for="(item, index) in suggestions" :key="index">{{ item }}</li>
+        </ul>
         <div class="search-button">
           <button class="button-primary" @click="fetch(query, filters)">Search</button>
         </div>
@@ -39,6 +42,7 @@ export default {
   data() {
     return {
       query: '',
+      suggestions: [],
       maxAbstractWords: 50,
       timeTaken: -1,
       isLoading: false,
@@ -76,6 +80,31 @@ export default {
           this.timeTaken = data.time;
           this.data = data.results;
           this.isLoading = false;
+        })
+        .catch(error => {
+          this.errorMessage = error;
+          this.isLoading = false;
+          console.error('There was an error!', error);
+        });
+    },
+    autosuggest(query) {
+      console.log(query)
+      const options = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      };
+      
+      fetch('http://localhost:5000/autocomplete', options)
+        .then(async response => {
+          const data = await response.json();
+          if (!response.ok) {
+            const error = (data && data.message) || response.status;
+            return Promise.reject(error);
+          }
+          // this.timeTaken = data.time;
+          // this.data = data.results;
+          // this.isLoading = false;
         })
         .catch(error => {
           this.errorMessage = error;
