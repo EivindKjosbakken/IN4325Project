@@ -5,22 +5,23 @@
         <img src="./assets/GoogIR.png" width="150"/>
         <input class="search-bar" v-model="query" v-on:keyup.enter="fetch(query)" placeholder="Search for something" />
         <div class="search-button">
-          <button class="button-primary" @click="fetch(query)">Search</button>
+          <button class="button-primary" @click="fetch(query, filters)">Search</button>
         </div>
       </div>
     </div>
     <div class="filters" >
       <div class="dropdown">
-        <button class="dropbtn">Filter by:</button>
+        Filter by:
+        <button class="dropbtn">Programme</button>
+        <!-- <div class="dropdown-content">
+          <label v-for="faculty in filterData.faculty"><input type="checkbox" v-model="filters.faculty" :value="faculty">{{ faculty }}</label>
+        </div> -->
         <div class="dropdown-content">
-          <label><input type="checkbox" v-model="filters" value="Faculty">Faculty</label>
-          <label><input type="checkbox" v-model="filters" value="More options">More options</label>
-          <label><input type="checkbox" v-model="filters" value="Idk">Idk</label>
+          <label v-for="programme in filterData.programme"><input type="checkbox" v-model="filters.programme" :value="programme">{{ programme }}</label>
         </div>
       </div>
       <p v-if="timeTaken !== -1">Time elapsed: {{ timeTaken }} seconds</p>
     </div>
-    
     <LoadingScreen v-if="isLoading" />
     <div class="search-result" v-else v-for="item in data">
       <a :href="item[1]" target="_blank">
@@ -41,22 +42,28 @@ export default {
       maxAbstractWords: 50,
       timeTaken: -1,
       isLoading: false,
-      filters: [],
       // Data index meanings
       // 0: uuid, 1: repository link, 2: title, 3: author, 4: contributor, 5: publication year, 6: abstract, 7: subject topic,
       // 8: language, 9: publication type, 10: publisher, 11: isbn, 12: issn, 13: patent, 14: patent status, 15: bibliographic note,
       // 16: access restriction, 17: embargo date, 18: faculty, 19: department, 20: research group, 21: programme, 22: project, 23: coordinates
       data: '',
-      
+      selectedUniversity: '',
+      filters: {
+        faculty: [],
+        programme: []
+      },
+      filterData: {
+        faculty: ['Aerospace Engineering', 'Applied Sciences', 'Architecture', 'Architecture and The Built Environment', 'Architecture and the Built Environment', 'Civil Engineering & Geosciences', 'Civil Engineering and Geosciences', 'Delft University of Technology', 'Electrical Engineering, Mathematics and Computer Science', 'Industrial Design Engineering', 'Mechanical, Maritime and Materials Engineering', 'OTB', 'OTB Research Institute', 'OTB Research Institute for the Built Environment', 'QuTech', 'Reactor Instituut Delft', 'Technology, Policy and Management'],
+        programme: ['Aerospace Engineering', 'Applied Earth Sciences', 'Applied Geophysics', 'Applied Mathematics', 'Applied Physics', 'Applied Sciences', 'Architecture, Urbanism and Building Sciences', 'BioMedical Engineering', 'Biomedical Engineering', 'Chemical Engineering', 'Civil Engineering', 'Cognitive Robotics', 'Complex Systems Engineering and Management', 'Computer Engineering', 'Computer Science', 'Computer Science and Engineering', 'Computer Simulations for Science and Engineering', 'Cyber Security Group', 'Design for Interaction', 'Electrical Engineering', 'Engineering and Policy Analysis', 'European Master in Urbanism', 'European Wind Energy Masters', 'Geo-Energy Engineering', 'Geo-Engineering', 'Geomatics', 'Geoscience and Engineering', 'Geoscience and Remote Sensing', 'Geotechnical Engineering', 'Industrial Ecology', 'Integrated Product Design', 'Life Science and Technology', 'Management of Technology', 'Marine Technology', 'Materials Science and Engineering', 'Mechanical Engineering', 'Metropolitan Analysis, Design and Engineering', 'Offshore Engineering', 'Offshore and Dredging Engineering', 'Spacecraft Systems Engineering', 'Strategic Product Design', 'Sustainable Energy Technology', 'Technical Medicine', 'The Berlage Post-MSc in Architecture and Urban Design', 'Transport, Infrastructure and Logistics', 'Water Management', 'Water Resources Engineering']      }
     }
   },
   methods: {
-    async fetch(query) {
+    async fetch(query, filters) {
       this.isLoading = true;
       const options = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 'query': query })
+        body: JSON.stringify({ query, filters })
       };
       
       fetch('http://localhost:5000/retrieve', options)
@@ -214,5 +221,13 @@ button {
 
 button:hover {
   background-color: #2563eb;
+}
+
+.container {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.dropbtn {
+  margin-left: 20px;
 }
 </style>

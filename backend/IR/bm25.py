@@ -13,11 +13,10 @@ from nltk.corpus import stopwords
 from nltk.corpus import wordnet
 from rank_bm25 import BM25Okapi
 
-
-
-
 stop_words = set(stopwords.words('english'))
 from nltk.stem import PorterStemmer
+import tensorflow_hub as hub
+
 
 
 def expand_query(query,model):
@@ -69,18 +68,46 @@ def preProcessQuery(query: str,model):
 
 
 
-def executeQuery(query: str, model, tfIdfMatrix=None, corpus=None, numberOfElementsToReturn=5):
+def executeQuery(query: str, model, tfIdfMatrix=None, corpus=None, numberOfElementsToReturn=100, embedder = None, goodQueries = None, corpusEmbedding = None):
     # first preprocess query same way dataset is preprocessed
 
     query = preProcessQuery(query,model)
+
+    #do embedding after preprocessing, but before splitting the query stirng
+    if (embedder):
+        start = time.time()
+        print("QUERY ER: ", query)
+        queryEmbedding = np.array(embedder([query])).reshape(-1,1)
+        cosineSim = np.dot(corpusEmbedding,queryEmbedding)/(np.linalg.norm(corpusEmbedding)*np.linalg.norm(queryEmbedding))
+        idx = np.argmax(cosineSim)
+        print("most sim sentence: ", goodQueries[idx])
+        print("Comparing queries took: ", time.time() - start)
+
     query=query.split(" ")
-    with open('IR/bm25_tokenized_corpus.json') as json_file:
-        tokenized_corpus = json.load(json_file)
 
 
-    bm25 = BM25Okapi(tokenized_corpus)
-    doc_scores=bm25.get_scores(query)
-    sortedIndices = np.argsort(doc_scores)[::-1]
+
+
+    with open('IR/bm25_tokenized_abstract_corpus.json') as json_file1: #TODO maybe load on startup of backend?
+        tokenized_abstract_corpus = json.load(json_file1)
+    with open('IR/bm25_tokenized_title_corpus.json') as json_file2: #TODO maybe load on startup of backend?
+        tokenized_title_corpus = json.load(json_file2)
+
+    #for abstract
+    bm25Abstract = BM25Okapi(tokenized_abstract_corpus)
+    abstract_doc_scores = bm25Abstract.get_scores(query)
+
+    #for title
+    bm25Title = BM25Okapi(tokenized_title_corpus)
+    title_doc_scores = bm25Title.get_scores(query)
+    
+
+    #assign weight (importance) to features (make sure they add to 1):
+    abstractWeight, titleWeight = 0.3, 0.7
+    combined_doc_scores = (abstract_doc_scores*abstractWeight) + (title_doc_scores*titleWeight)
+
+
+    sortedIndices = np.argsort(combined_doc_scores)[::-1]
 
 
     orderedCorpusAccordingToQuery = []
@@ -90,7 +117,7 @@ def executeQuery(query: str, model, tfIdfMatrix=None, corpus=None, numberOfEleme
     return orderedCorpusAccordingToQuery
 
 
-def executeQueryLocal(query: str, numberOfElementsToReturn=5):
+def executeQueryLocal(query: str, numberOfElementsToReturn=100):
     # first preprocess query same way dataset is preprocessed
     query = preProcessQuery(query)
     query = query.split(" ")
