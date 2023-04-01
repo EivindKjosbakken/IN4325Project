@@ -126,6 +126,46 @@ def runPreprocessing(corpus : list):
     return corpus
 
 
+def retrieveAndSaveGoodQueries():
+    #english query logs
+    dfQueryLogs = pd.read_excel("../../data/Analytics_repository.tudelft.nl_Search_Terms_20220101-20221231.xlsx", sheet_name="Dataset1")
+    dfQueryLogs = dfQueryLogs.replace(np.nan, '', regex=True)
+
+    #dutch query logs
+    dfQueryLogs2 = pd.read_excel("../../data/Analytics_Alle_websitegegevens_Search_Terms_20220101-20221231.xlsx", sheet_name="Dataset1")
+    dfQueryLogs2 = dfQueryLogs2.replace(np.nan, '', regex=True)
+
+    dfGoodQueries = dfQueryLogs.loc[(dfQueryLogs["Time after Search"].astype(int) > 30) & 
+                                    (dfQueryLogs["% Search Refinements"].astype(int) < 75) & 
+                                    (dfQueryLogs["% Search Exits"].astype(int) < 75), :]
+
+    dfGoodQueries2 = dfQueryLogs2.loc[(dfQueryLogs2["Time after Search"].astype(int) > 30) & 
+                                    (dfQueryLogs2["% Search Refinements"].astype(int) < 75) & 
+                                    (dfQueryLogs2["% Search Exits"].astype(int) < 75), :]
+
+    goodQueries = np.concatenate((dfGoodQueries["Search Term"].to_numpy(),dfGoodQueries2["Search Term"].to_numpy() ))
+    
+    #clean a the queries
+    for idx, q in enumerate(goodQueries):
+        q = (q.split(":"))[-1]
+        q = q.replace("'", "").replace('"', "").strip()
+        goodQueries[idx] = q
+
+    np.savez("goodQueries.npz", *goodQueries) #save non preprocessed goodQueries so suggest to user
+
+    goodQueries = runPreprocessing(goodQueries)
+
+    return goodQueries
+
+
+def saveGoodQueryEmbedding(goodQueries):
+    """saves an embedding of 'good' queries using googles sentence encoder"""
+    import tensorflow_hub as hub
+    embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
+    corpusEmbedding = np.array(embed(goodQueries))
+    np.save("corpusEmbedding.npy", corpusEmbedding)
+
+
 def indexDataset(numberOfDocumentsToRank = 1000):
     #read data in
 
@@ -160,8 +200,9 @@ def indexDataset(numberOfDocumentsToRank = 1000):
     storeTokenizedCorpus(abstractCorpus, "bm25_tokenized_abstract_corpus.json")
     storeTokenizedCorpus(titleCorpus, "bm25_tokenized_title_corpus.json")
 
-
-
+    #for query reformulation, retrieve "good" queries, and encode them
+    goodQueries = retrieveAndSaveGoodQueries()
+    saveGoodQueryEmbedding(goodQueries)
 
 
 
