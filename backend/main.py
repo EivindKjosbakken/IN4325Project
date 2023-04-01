@@ -2,7 +2,7 @@ from flask import Flask, request
 import requests
 from flask_cors import CORS, cross_origin
 #from IR.tfIdf import executeQuery
-from IR.bm25 import executeQuery
+from IR.exact_matching import executeQuery
 import json
 import numpy as np
 import time

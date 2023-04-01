@@ -108,7 +108,10 @@ def executeQuery(query: str, model, tfIdfMatrix=None, corpus=None, numberOfEleme
 
 
     sortedIndices = np.argsort(combined_doc_scores)[::-1]
-
+    with open('bm25_first_titles.txt', 'a+') as f:
+        for i in sortedIndices[:10]:
+            f.write(corpus[str(i)][2])
+            f.write('\n')
 
     orderedCorpusAccordingToQuery = []
     for idx in sortedIndices[:numberOfElementsToReturn]:
