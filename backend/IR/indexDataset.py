@@ -60,6 +60,7 @@ def storeTokenizedCorpus(corpus, filename = "bm25_tokenized_corpus.json"):
     with open(filename, "w") as write_file:
         json.dump(tokenized_corpus, write_file)
 
+
 def createAndStoreIdfValues(corpus, uniqueWords):
     invDocFreq = dict.fromkeys(uniqueWords, 0)
     numDocuments = len(corpus)
@@ -182,6 +183,8 @@ def indexDataset(numberOfDocumentsToRank = 1000):
     #get data
     abstractCorpus = df["abstract"].to_numpy()[:numberOfDocumentsToRank] 
     titleCorpus = df["title"].to_numpy()[:numberOfDocumentsToRank]
+
+
 
     #preprocess
     abstractCorpus = runPreprocessing(abstractCorpus)
