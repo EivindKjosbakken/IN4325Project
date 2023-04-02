@@ -3,12 +3,12 @@
     <div class="search-container">
       <div class="search-input">
         <img src="./assets/GoogIR.png" width="150"/>
-        <input class="search-bar" v-model="query" v-on:keyup.enter="fetch(query, filters)" placeholder="Search for something" />
+        <input class="search-bar" v-model="query" v-on:keyup.enter="fetch(query, filters, compare)" placeholder="Search for something" />
         <ul v-if="suggestions.length > 0">
           <li v-for="(item, index) in suggestions" :key="index">{{ item }}</li>
         </ul>
         <div class="search-button">
-          <button class="button-primary" @click="fetch(query, filters)">Search</button>
+          <button class="button-primary" @click="fetch(query, filters, compare)">Search</button>
         </div>
       </div>
     </div>
@@ -16,14 +16,18 @@
       <div class="dropdown">
         Filter by:
         <button class="dropbtn">Programme</button>
-        <!-- <div class="dropdown-content">
-          <label v-for="faculty in filterData.faculty"><input type="checkbox" v-model="filters.faculty" :value="faculty">{{ faculty }}</label>
-        </div> -->
         <div class="dropdown-content">
           <label v-for="programme in filterData.programme"><input type="checkbox" v-model="filters.programme" :value="programme">{{ programme }}</label>
         </div>
       </div>
-      <p v-if="timeTaken !== -1">Time elapsed: {{ timeTaken }} seconds</p>
+      <div>
+        <p v-if="timeTaken !== -1">Time elapsed: {{ timeTaken }} seconds</p>
+        <p v-if="compareScore !== -1 && compare">Similarity with original engine: {{ compareScore }}</p>
+      </div>
+      <div class="right">
+        Compare to original
+        <input type="checkbox" v-model="compare">
+      </div>
     </div>
     <LoadingScreen v-if="isLoading" />
     <div class="search-result" v-else v-for="item in data">
@@ -41,6 +45,8 @@ import LoadingScreen from "./LoadingScreen";
 export default {
   data() {
     return {
+      compare: false,
+      compareScore: -1,
       query: '',
       suggestions: [],
       maxAbstractWords: 50,
@@ -53,7 +59,6 @@ export default {
       data: '',
       selectedUniversity: '',
       filters: {
-        faculty: [],
         programme: []
       },
       filterData: {
@@ -62,12 +67,12 @@ export default {
     }
   },
   methods: {
-    async fetch(query, filters) {
+    async fetch(query, filters, compare) {
       this.isLoading = true;
       const options = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, filters })
+        body: JSON.stringify({ query, filters, compare })
       };
       
       fetch('http://localhost:5000/retrieve', options)
@@ -79,6 +84,7 @@ export default {
           }
           this.timeTaken = data.time;
           this.data = data.results;
+          this.compareScore = data.compareScore
           this.isLoading = false;
         })
         .catch(error => {
@@ -107,6 +113,12 @@ export default {
 </script>
 
 <style>
+.right {
+  margin-left: auto; 
+  margin-right: 0;
+  display: inline-block;
+}
+
 .search-container {
   display: flex;
   flex-direction: row;

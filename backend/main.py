@@ -2,7 +2,8 @@ from flask import Flask, request, jsonify
 import requests
 from flask_cors import CORS, cross_origin
 #from IR.tfIdf import executeQuery
-from IR.exact_matching import executeQuery
+from IR.bm25 import executeQuery as executeQueryBM
+from IR.exact_matching import executeQuery as executeQueryEM
 import json
 import numpy as np
 import time
@@ -11,6 +12,7 @@ import os
 import traceback
 from transformers import pipeline
 import tensorflow_hub as hub
+import rbo
 
 
 import os
@@ -76,20 +78,69 @@ def executeFilter(indices, filters):
                 indices.remove(element)
     return indices
 
+# def rbo(list1, list2, p=0.9):
+#     """
+#     Computes the Rank-biased overlap (RBO) between two ordered lists.
+
+#     Parameters:
+#         list1 (list): The first ordered list.
+#         list2 (list): The second ordered list.
+#         p (float): The probability of continuing to the next item in the list.
+
+#     Returns:
+#         float: The RBO value between the two lists.
+#     """
+#     overlap = set(list1) & set(list2)
+#     if not overlap:
+#         return 0.0
+
+#     seen1 = set()
+#     seen2 = set()
+#     rbo_min = 0.0
+#     for i, (a, b) in enumerate(zip(list1, list2), start=1):
+#         if a == b:
+#             rbo_min += 1.0
+#         seen1.add(a)
+#         seen2.add(b)
+
+#         # Compute the RBO at the current depth
+#         rbo_at_depth = rbo_min / i
+
+#         # Compute the contribution of the current depth to the overall RBO
+#         weight = pow(p, i)
+#         rbo_min += weight * (rbo_at_depth - rbo_min)
+
+#         # Stop if the overlap is covered
+#         if seen1 == overlap and seen2 == overlap:
+#             break
+
+#         # Cap the RBO value at 1.0
+#         rbo_min = min(rbo_min, 1.0)
+
+#     return rbo_min
+
+
 @app.route(f"{APP_URL}/retrieve", methods=["POST"])
 def retrieve():
     data = request.json  # if you want to retrieve data
+    compareScore = -1
     start = time.time()
     try:
         # indices = executeQuery(data["query"],model, tfIdfMatrix, corpus) #NOTE only for tfidf
-        indices = executeQuery(query = data["query"],model = model, tfIdfMatrix = None, corpus = corpus, numberOfElementsToReturn=5, embedder=embedder, goodQueries=goodQueries, corpusEmbedding=corpusEmbedding)
+        indices = executeQueryBM(query = data["query"],model = model, tfIdfMatrix = None, corpus = corpus, numberOfElementsToReturn=5, embedder=embedder, goodQueries=goodQueries, corpusEmbedding=corpusEmbedding)
+        if data["compare"]:
+            indicesCompare = executeQueryEM(query = data["query"],model = model, tfIdfMatrix = None, corpus = corpus, numberOfElementsToReturn=5, embedder=embedder, goodQueries=goodQueries, corpusEmbedding=corpusEmbedding)
+            indicesBMIds = [item[0] for item in indices]
+            indicesEMIds = [item[0] for item in indicesCompare]
+            compareScore = rbo.RankingSimilarity(indicesBMIds, indicesEMIds).rbo()
+
         indices = executeFilter(indices, data["filters"])
-        print(data)
+        # print(data)
         filters = data.get("filters", None)
         if (filters):
             indices = executeFilter(indices, filters)
 
-        return {"results" : (indices[:10]), "time": time.time() - start}, 200
+        return {"results" : (indices[:10]), "time": time.time() - start, "compareScore": compareScore }, 200
     except:
         print("cant execute query")
         return ("error: ", traceback.print_exc()), 400
