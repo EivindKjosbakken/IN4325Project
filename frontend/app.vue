@@ -9,6 +9,7 @@
         </ul>
         <div class="search-button">
           <button class="button-primary" @click="fetch(query, filters, compare)">Search</button>
+          <button class="button-primary" @click="runMany()">Run Many</button>
         </div>
       </div>
     </div>
@@ -36,6 +37,11 @@
       </a>
       <p class="search-result-abstract">{{ getLimitedAbstract(item[6]) }}</p>
     </div>
+    {{ scores  }}
+    avgtime
+    {{ avgtime }}
+    avgScore
+    {{ avgScore }}
   </div>
 </template>
 
@@ -45,6 +51,9 @@ import LoadingScreen from "./LoadingScreen";
 export default {
   data() {
     return {
+      avgScore:0,
+      avgtime:0,
+      scores: {},
       compare: false,
       compareScore: -1,
       query: '',
@@ -67,6 +76,23 @@ export default {
     }
   },
   methods: {
+    async runMany() {
+      fetch('http://localhost:5000/runmany', {})
+        .then(async response => {
+          const data = await response.json();
+          if (!response.ok) {
+            const error = (data && data.message) || response.status;
+            return Promise.reject(error);
+          }
+          this.scores = data.scores;
+        })
+        .catch(error => {
+          this.errorMessage = error;
+          this.avgtime = avgtime;
+          this.avgScore = avgScore;
+          console.error('There was an error!', error);
+        });
+    },
     async fetch(query, filters, compare) {
       this.isLoading = true;
       const options = {

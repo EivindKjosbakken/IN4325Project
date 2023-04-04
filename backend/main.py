@@ -13,13 +13,7 @@ import traceback
 from transformers import pipeline
 import tensorflow_hub as hub
 import rbo
-
-
 import os
-
-
-
-
 
 app = Flask(__name__)
 CORS(app)
@@ -78,47 +72,29 @@ def executeFilter(indices, filters):
                 indices.remove(element)
     return indices
 
-# def rbo(list1, list2, p=0.9):
-#     """
-#     Computes the Rank-biased overlap (RBO) between two ordered lists.
-
-#     Parameters:
-#         list1 (list): The first ordered list.
-#         list2 (list): The second ordered list.
-#         p (float): The probability of continuing to the next item in the list.
-
-#     Returns:
-#         float: The RBO value between the two lists.
-#     """
-#     overlap = set(list1) & set(list2)
-#     if not overlap:
-#         return 0.0
-
-#     seen1 = set()
-#     seen2 = set()
-#     rbo_min = 0.0
-#     for i, (a, b) in enumerate(zip(list1, list2), start=1):
-#         if a == b:
-#             rbo_min += 1.0
-#         seen1.add(a)
-#         seen2.add(b)
-
-#         # Compute the RBO at the current depth
-#         rbo_at_depth = rbo_min / i
-
-#         # Compute the contribution of the current depth to the overall RBO
-#         weight = pow(p, i)
-#         rbo_min += weight * (rbo_at_depth - rbo_min)
-
-#         # Stop if the overlap is covered
-#         if seen1 == overlap and seen2 == overlap:
-#             break
-
-#         # Cap the RBO value at 1.0
-#         rbo_min = min(rbo_min, 1.0)
-
-#     return rbo_min
-
+@app.route(f"{APP_URL}/runmany", methods=["GET"])
+def runMany():
+    # with open("./IR/queriesToRun.txt", encoding='utf-8') as file:
+    #     array = file.readlines()
+    # print(array)
+    text_file = open("./IR/queriesToRun.txt", "r", encoding="utf-8", errors='ignore')
+    queries = text_file.read().split('\n')
+    scores = []
+    compare = True
+    for query in queries:
+        start = time.time()
+        indices = executeQueryBM(query = query ,model = model, tfIdfMatrix = None, corpus = corpus, numberOfElementsToReturn=5, embedder=embedder, goodQueries=goodQueries, corpusEmbedding=corpusEmbedding)
+        if compare:
+            indicesCompare = executeQueryEM(query = query,model = model, tfIdfMatrix = None, corpus = corpus, numberOfElementsToReturn=5, embedder=embedder, goodQueries=goodQueries, corpusEmbedding=corpusEmbedding)
+            indicesBMIds = [item[0] for item in indices]
+            indicesEMIds = [item[0] for item in indicesCompare]
+            compareScore = rbo.RankingSimilarity(indicesBMIds, indicesEMIds).rbo(p = 0.9)
+            scores.append({'score' : compareScore, 'time': time.time() - start})
+    avgScore = sum([i['score'] for i in scores]) / len(scores)
+    avgtime = sum([i['time'] for i in scores]) / len(scores)
+    print(scores)
+    print(avgScore)
+    return {"scores": scores, "avgScore": avgScore, "avgtime": avgtime}
 
 @app.route(f"{APP_URL}/retrieve", methods=["POST"])
 def retrieve():
@@ -132,7 +108,7 @@ def retrieve():
             indicesCompare = executeQueryEM(query = data["query"],model = model, tfIdfMatrix = None, corpus = corpus, numberOfElementsToReturn=5, embedder=embedder, goodQueries=goodQueries, corpusEmbedding=corpusEmbedding)
             indicesBMIds = [item[0] for item in indices]
             indicesEMIds = [item[0] for item in indicesCompare]
-            compareScore = rbo.RankingSimilarity(indicesBMIds, indicesEMIds).rbo()
+            compareScore = rbo.RankingSimilarity(indicesBMIds, indicesEMIds).rbo(p = 0.9)
 
         indices = executeFilter(indices, data["filters"])
         # print(data)
